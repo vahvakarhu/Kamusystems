@@ -11,10 +11,20 @@ import { Main } from "./MyComp/Main";
 import { NextLogo } from "./MyComp/NextLogo";
 import { VarastokamuAd } from "./Varastokamu/Ad";
 import { VarastokamuAppDemo } from "./Varastokamu/AppDemo";
+import { AllKamusAd } from "./Varastokamu/AllKamusAd";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="AllKamusAd"
+        component={AllKamusAd}
+        durationInFrames={720}
+        fps={30}
+        width={1280}
+        height={720}
+        defaultProps={{}}
+      />
       <Composition
         id="VarastokamuAppDemo"
         component={VarastokamuAppDemo}
