@@ -7,528 +7,476 @@ import {
   Sequence,
 } from "remotion";
 
-// ─── Brand colors ─────────────────────────────────────────────────────────────
-const BRAND_BG = "#0A1628";
-const BRAND_BLUE = "#3B82F6";
-const APP_BG = "#F1F5F9";
-const SIDEBAR_BG = "#1E293B";
-const WHITE = "#FFFFFF";
-const TEXT_DARK = "#0F172A";
-const TEXT_MID = "#475569";
-const TEXT_LIGHT = "#94A3B8";
-const GREEN = "#10B981";
-const RED = "#EF4444";
+// ─── Real VarastoKamu colors ──────────────────────────────────────────────────
+const APP_BG = "#F2F2F7";
+const CARD_BG = "#FFFFFF";
+const GREEN = "#3A8C5C";
+const GREEN_LIGHT = "#E8F5EE";
+const PURPLE_LIGHT = "#F0EBFF";
 const ORANGE = "#F59E0B";
+const ORANGE_LIGHT = "#FEF3C7";
+const RED = "#EF4444";
+const RED_LIGHT = "#FEE2E2";
+const BLUE = "#3B82F6";
+const BLUE_LIGHT = "#EFF6FF";
+const TEXT_DARK = "#1C1C1E";
+const TEXT_MID = "#6B6B6B";
+const TEXT_LIGHT = "#AEAEB2";
+const SHADOW = "0 2px 12px rgba(0,0,0,0.08)";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function useSpring(startFrame: number, fps: number) {
+function useSpr(startFrame: number, fps: number, damping = 16) {
   const frame = useCurrentFrame();
   return spring({
     frame: frame - startFrame,
     fps,
-    config: { damping: 16, stiffness: 130, mass: 0.7 },
+    config: { damping, stiffness: 130, mass: 0.7 },
   });
 }
 
-function useSlideIn(
-  startFrame: number,
-  fps: number,
-  direction: "up" | "right" = "up",
-  offset = 40,
-) {
-  const progress = useSpring(startFrame, fps);
-  const val = interpolate(progress, [0, 1], [offset, 0]);
+function useSlide(startFrame: number, fps: number, dy = 40) {
+  const p = useSpr(startFrame, fps);
   return {
-    transform:
-      direction === "up" ? `translateY(${val}px)` : `translateX(${val}px)`,
-    opacity: interpolate(progress, [0, 0.4], [0, 1], {
-      extrapolateRight: "clamp",
-    }),
+    transform: `translateY(${interpolate(p, [0, 1], [dy, 0])}px)`,
+    opacity: interpolate(p, [0, 0.4], [0, 1], { extrapolateRight: "clamp" }),
   };
 }
 
-function useCountUp(target: number, startFrame: number, endFrame: number) {
+function useCountUp(target: number, start: number, end: number) {
   const frame = useCurrentFrame();
-  const progress = interpolate(frame, [startFrame, endFrame], [0, 1], {
+  const p = interpolate(frame, [start, end], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-  return Math.round(target * progress);
+  return Math.round(target * p);
 }
 
-// ─── Browser Chrome Wrapper ───────────────────────────────────────────────────
-const BrowserFrame: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => (
+// ─── Phone Frame ──────────────────────────────────────────────────────────────
+const Phone: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div
     style={{
-      width: 1100,
+      width: 340,
       height: 680,
-      borderRadius: 14,
-      overflow: "hidden",
-      boxShadow: "0 40px 100px rgba(0,0,0,0.6)",
-      display: "flex",
-      flexDirection: "column",
-      background: WHITE,
+      borderRadius: 44,
+      background: "#1C1C1E",
+      padding: 10,
+      boxShadow:
+        "0 60px 120px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1)",
     }}
   >
-    {/* Title bar */}
     <div
       style={{
-        height: 38,
-        background: "#E2E8F0",
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        gap: 8,
-        flexShrink: 0,
-      }}
-    >
-      <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#FF5F57" }} />
-      <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#FEBC2E" }} />
-      <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#28C840" }} />
-      <div
-        style={{
-          marginLeft: 12,
-          background: WHITE,
-          borderRadius: 6,
-          padding: "3px 16px",
-          fontSize: 12,
-          color: TEXT_MID,
-          flex: 1,
-          maxWidth: 320,
-          textAlign: "center",
-        }}
-      >
-        app.varastokamu.fi
-      </div>
-    </div>
-    {/* App body */}
-    <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-      {children}
-    </div>
-  </div>
-);
-
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
-const Sidebar: React.FC<{ active: string }> = ({ active }) => {
-  const items = [
-    { icon: "📊", label: "Dashboard" },
-    { icon: "📦", label: "Varasto" },
-    { icon: "🚚", label: "Tilaukset" },
-    { icon: "📋", label: "Raportit" },
-  ];
-  return (
-    <div
-      style={{
-        width: 200,
-        background: SIDEBAR_BG,
+        width: "100%",
+        height: "100%",
+        borderRadius: 36,
+        overflow: "hidden",
+        background: APP_BG,
         display: "flex",
         flexDirection: "column",
-        padding: "20px 0",
-        flexShrink: 0,
+        position: "relative",
       }}
     >
-      {/* Logo */}
+      {/* Status bar */}
       <div
         style={{
+          height: 44,
+          background: CARD_BG,
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          padding: "0 18px 20px",
-          borderBottom: "1px solid #334155",
-          marginBottom: 12,
+          justifyContent: "space-between",
+          padding: "0 20px",
+          flexShrink: 0,
         }}
       >
-        <span style={{ fontSize: 22 }}>📦</span>
-        <span
-          style={{
-            color: WHITE,
-            fontWeight: 700,
-            fontSize: 16,
-            fontFamily: "sans-serif",
-          }}
-        >
-          Varasto<span style={{ color: BRAND_BLUE }}>kamu</span>
-        </span>
-      </div>
-      {items.map((item) => (
+        <span style={{ fontSize: 12, fontWeight: 600, color: TEXT_DARK, fontFamily: "sans-serif" }}>9:41</span>
         <div
-          key={item.label}
+          style={{
+            width: 100,
+            height: 28,
+            background: "#1C1C1E",
+            borderRadius: 20,
+            position: "absolute",
+            left: "50%",
+            transform: "translateX(-50%)",
+            top: 8,
+          }}
+        />
+        <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: TEXT_DARK }}>●●●</span>
+        </div>
+      </div>
+      {/* App header */}
+      <div
+        style={{
+          background: CARD_BG,
+          padding: "8px 16px 10px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: "1px solid #E5E5EA",
+          flexShrink: 0,
+        }}
+      >
+        <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            padding: "10px 18px",
-            background: active === item.label ? `${BRAND_BLUE}22` : "transparent",
-            borderLeft:
-              active === item.label ? `3px solid ${BRAND_BLUE}` : "3px solid transparent",
-            cursor: "pointer",
+            gap: 8,
+            background: "#F2F2F7",
+            borderRadius: 12,
+            padding: "6px 12px",
           }}
         >
-          <span style={{ fontSize: 16 }}>{item.icon}</span>
-          <span
-            style={{
-              color: active === item.label ? WHITE : TEXT_LIGHT,
-              fontSize: 14,
-              fontFamily: "sans-serif",
-              fontWeight: active === item.label ? 600 : 400,
-            }}
-          >
-            {item.label}
-          </span>
+          <span style={{ fontSize: 16 }}>🏭</span>
+          <span style={{ fontSize: 15, fontWeight: 600, color: TEXT_DARK, fontFamily: "sans-serif" }}>VarastoKamu</span>
+          <span style={{ fontSize: 10, color: TEXT_MID }}>⌄</span>
         </div>
-      ))}
-    </div>
-  );
-};
-
-// ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard: React.FC<{
-  label: string;
-  value: number | string;
-  unit?: string;
-  color: string;
-  icon: string;
-  style?: React.CSSProperties;
-}> = ({ label, value, unit, color, icon, style }) => (
-  <div
-    style={{
-      background: WHITE,
-      borderRadius: 10,
-      padding: "16px 20px",
-      flex: 1,
-      boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-      borderTop: `3px solid ${color}`,
-      ...style,
-    }}
-  >
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div>
-        <div style={{ fontSize: 11, color: TEXT_LIGHT, fontFamily: "sans-serif", textTransform: "uppercase", letterSpacing: 1 }}>
-          {label}
-        </div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: TEXT_DARK, fontFamily: "sans-serif", marginTop: 4 }}>
-          {value}{unit && <span style={{ fontSize: 16, fontWeight: 400, color: TEXT_MID }}> {unit}</span>}
+        <div style={{ display: "flex", gap: 12 }}>
+          <span style={{ fontSize: 18, color: TEXT_MID }}>?</span>
+          <span style={{ fontSize: 16, color: TEXT_MID }}>☽</span>
         </div>
       </div>
-      <span style={{ fontSize: 28 }}>{icon}</span>
+      {/* Screen content */}
+      <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+        {children}
+      </div>
+      {/* Bottom nav */}
+      <div
+        style={{
+          background: CARD_BG,
+          borderTop: "1px solid #E5E5EA",
+          display: "flex",
+          padding: "8px 0 16px",
+          flexShrink: 0,
+        }}
+      >
+        {[
+          { icon: "☰", label: "Valikko", active: false },
+          { icon: "+", label: "Tapahtuma", active: false },
+          { icon: "⌕", label: "Haku", active: false },
+          { icon: "···", label: "Lisää", active: false },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <span style={{ fontSize: 18, color: item.active ? GREEN : TEXT_MID }}>{item.icon}</span>
+            <span style={{ fontSize: 9, color: item.active ? GREEN : TEXT_MID, fontFamily: "sans-serif" }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   </div>
 );
 
-// ─── Scene 1: Dashboard (frames 0-150) ───────────────────────────────────────
-const Dashboard: React.FC = () => {
+// ─── Stat Card (matches real app) ─────────────────────────────────────────────
+const StatCard: React.FC<{
+  label: string;
+  value: string | number;
+  sub: string;
+  iconBg: string;
+  icon: string;
+}> = ({ label, value, sub, iconBg, icon }) => (
+  <div
+    style={{
+      background: CARD_BG,
+      borderRadius: 14,
+      padding: "12px 14px",
+      boxShadow: SHADOW,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+    }}
+  >
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <span style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif" }}>{label}</span>
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          background: iconBg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 16,
+        }}
+      >
+        {icon}
+      </div>
+    </div>
+    <div style={{ fontSize: 28, fontWeight: 800, color: TEXT_DARK, fontFamily: "sans-serif", lineHeight: 1 }}>
+      {value}
+    </div>
+    <div style={{ fontSize: 10, color: TEXT_MID, fontFamily: "sans-serif" }}>{sub}</div>
+  </div>
+);
+
+// ─── Scene 1: Yleiskatsaus Dashboard (0-150) ──────────────────────────────────
+const DashboardScreen: React.FC = () => {
   const { fps } = useVideoConfig();
+  const h1 = useSlide(5, fps, 30);
+  const c1 = useSlide(18, fps);
+  const c2 = useSlide(24, fps);
+  const c3 = useSlide(30, fps);
+  const c4 = useSlide(36, fps);
+  const c5 = useSlide(44, fps);
 
-  const browserIn = useSlideIn(5, fps, "up", 60);
-  const card1 = useSlideIn(20, fps);
-  const card2 = useSlideIn(30, fps);
-  const card3 = useSlideIn(40, fps);
-  const listIn = useSlideIn(55, fps);
-
-  const totalProducts = useCountUp(284, 20, 80);
-  const lowStock = useCountUp(7, 30, 90);
-  const todayOrders = useCountUp(23, 40, 100);
-
-  const activities = [
-    { time: "14:32", text: "Tilaus #1042 vastaanotettu", dot: GREEN },
-    { time: "13:15", text: "Tuote 'Ruuvit M8' — matala varasto", dot: ORANGE },
-    { time: "11:50", text: "Tilaus #1041 toimitettu", dot: BRAND_BLUE },
-    { time: "10:20", text: "Varasto päivitetty: +50 kpl 'Mutteri M6'", dot: GREEN },
-  ];
+  const erät = useCountUp(18, 18, 70);
+  const määrä = useCountUp(1017, 24, 80);
+  const vähissä = useCountUp(3, 36, 75);
+  const arvo = useCountUp(7872, 44, 90);
 
   return (
-    <AbsoluteFill
-      style={{
-        background: `radial-gradient(ellipse at 50% 30%, #1E3A5F 0%, ${BRAND_BG} 70%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ ...browserIn }}>
-        <BrowserFrame>
-          <Sidebar active="Dashboard" />
-          <div style={{ flex: 1, background: APP_BG, padding: 24, overflowY: "auto" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif", margin: "0 0 20px" }}>
-              Dashboard
-            </h1>
-            {/* Stat cards */}
-            <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
-              <div style={{ ...card1, flex: 1 }}>
-                <StatCard label="Tuotteet yhteensä" value={totalProducts} icon="📦" color={BRAND_BLUE} />
-              </div>
-              <div style={{ ...card2, flex: 1 }}>
-                <StatCard label="Matala varasto" value={lowStock} unit="tuotetta" icon="⚠️" color={ORANGE} />
-              </div>
-              <div style={{ ...card3, flex: 1 }}>
-                <StatCard label="Tilauksia tänään" value={todayOrders} icon="🚚" color={GREEN} />
-              </div>
-            </div>
-            {/* Recent activity */}
-            <div style={{ ...listIn, background: WHITE, borderRadius: 10, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: TEXT_DARK, fontFamily: "sans-serif", marginBottom: 12 }}>
-                Viimeisimmät tapahtumat
-              </div>
-              {activities.map((a, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: i < activities.length - 1 ? "1px solid #F1F5F9" : "none" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: a.dot, flexShrink: 0 }} />
-                  <span style={{ fontSize: 12, color: TEXT_LIGHT, fontFamily: "sans-serif", width: 40 }}>{a.time}</span>
-                  <span style={{ fontSize: 13, color: TEXT_MID, fontFamily: "sans-serif" }}>{a.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </BrowserFrame>
+    <div style={{ padding: "14px 14px 0", overflowY: "hidden", height: "100%" }}>
+      <div style={h1}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>Yleiskatsaus</div>
+        <div style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif", marginBottom: 12 }}>
+          Varaston kokonaistilanne yhdellä silmäyksellä
+        </div>
       </div>
-    </AbsoluteFill>
+      {/* 2x2 grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+        <div style={c1}><StatCard label="Aktiiviset erät" value={erät} sub="Tuotteita: 19" iconBg={PURPLE_LIGHT} icon="📚" /></div>
+        <div style={c2}><StatCard label="Kokonaismäärä" value={määrä.toLocaleString("fi")} sub="Sijainteja: 10" iconBg={GREEN_LIGHT} icon="📦" /></div>
+        <div style={c3}><StatCard label="Viikon tapahtumat" value={0} sub="↑+0  ↓-0" iconBg={PURPLE_LIGHT} icon="📈" /></div>
+        <div style={c4}><StatCard label="Vähissä / loppu" value={vähissä} sub="Erää alle 10 yksikköä" iconBg={ORANGE_LIGHT} icon="⚠️" /></div>
+      </div>
+      {/* Arvo card */}
+      <div style={c5}>
+        <div style={{ background: CARD_BG, borderRadius: 14, padding: "12px 14px", boxShadow: SHADOW, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif" }}>Varaston arvo</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: TEXT_DARK, fontFamily: "sans-serif" }}>{arvo.toLocaleString("fi")} €</div>
+            <div style={{ fontSize: 10, color: TEXT_MID, fontFamily: "sans-serif" }}>Myyntiarvo: 9 200 €</div>
+          </div>
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: GREEN_LIGHT, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>€</div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// ─── Scene 2: Inventory list (frames 150-300) ─────────────────────────────────
-const InventoryScene: React.FC = () => {
+// ─── Scene 2: Uusi tapahtuma bottom sheet (150-300) ───────────────────────────
+const ActionScreen: React.FC = () => {
   const { fps } = useVideoConfig();
   const frame = useCurrentFrame();
 
-  const browserIn = useSlideIn(0, fps, "right", 80);
+  const sheetY = interpolate(
+    spring({ frame: frame - 10, fps, config: { damping: 18, stiffness: 120 } }),
+    [0, 1],
+    [300, 0],
+  );
 
-  const products = [
-    { sku: "RUV-M8", name: "Ruuvit M8 50mm", qty: 4, location: "A-12", low: true },
-    { sku: "MUT-M6", name: "Mutteri M6", qty: 156, location: "A-13", low: false },
-    { sku: "PUL-10", name: "Pultit 10mm", qty: 89, location: "B-02", low: false },
-    { sku: "VAS-500", name: "Vasarat 500g", qty: 12, location: "C-07", low: false },
-    { sku: "TAR-A4", name: "Tarrat A4", qty: 3, location: "D-01", low: true },
+  const actions = [
+    { label: "Lisää varastoon", icon: "📦", bg: GREEN_LIGHT, color: GREEN },
+    { label: "Poisto", icon: "🗑️", bg: RED_LIGHT, color: RED },
+    { label: "Siirto", icon: "↔️", bg: BLUE_LIGHT, color: BLUE },
+    { label: "Inventointi", icon: "📋", bg: ORANGE_LIGHT, color: ORANGE },
+    { label: "Valmistus", icon: "🔧", bg: GREEN_LIGHT, color: GREEN },
   ];
 
-  // Highlight row 0 (low stock) with a pulse
-  const pulse = interpolate(
-    Math.sin((frame / fps) * Math.PI * 3),
-    [-1, 1],
-    [0.85, 1],
-  );
-
   return (
-    <AbsoluteFill
-      style={{
-        background: `radial-gradient(ellipse at 50% 30%, #1E3A5F 0%, ${BRAND_BG} 70%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ ...browserIn }}>
-        <BrowserFrame>
-          <Sidebar active="Varasto" />
-          <div style={{ flex: 1, background: APP_BG, padding: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif", margin: 0 }}>
-                Varasto
-              </h1>
-              <button
-                style={{
-                  background: BRAND_BLUE,
-                  color: WHITE,
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "8px 16px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  fontFamily: "sans-serif",
-                  cursor: "pointer",
-                }}
-              >
-                + Lisää tuote
-              </button>
-            </div>
-            {/* Table */}
-            <div style={{ background: WHITE, borderRadius: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", overflow: "hidden" }}>
-              {/* Header */}
-              <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 80px 80px 80px", padding: "10px 16px", background: "#F8FAFC", borderBottom: "1px solid #E2E8F0" }}>
-                {["SKU", "Tuote", "Saldo", "Sijainti", "Tila"].map((h) => (
-                  <span key={h} style={{ fontSize: 11, fontWeight: 600, color: TEXT_LIGHT, fontFamily: "sans-serif", textTransform: "uppercase" }}>{h}</span>
-                ))}
-              </div>
-              {products.map((p, i) => {
-                const rowStyle: React.CSSProperties = p.low
-                  ? { background: `${RED}0D`, opacity: pulse }
-                  : {};
-                return (
-                  <div
-                    key={p.sku}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "100px 1fr 80px 80px 80px",
-                      padding: "12px 16px",
-                      borderBottom: i < products.length - 1 ? "1px solid #F1F5F9" : "none",
-                      alignItems: "center",
-                      ...rowStyle,
-                    }}
-                  >
-                    <span style={{ fontSize: 12, color: TEXT_LIGHT, fontFamily: "monospace" }}>{p.sku}</span>
-                    <span style={{ fontSize: 14, color: TEXT_DARK, fontFamily: "sans-serif", fontWeight: 500 }}>{p.name}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: p.low ? RED : TEXT_DARK, fontFamily: "sans-serif" }}>{p.qty} kpl</span>
-                    <span style={{ fontSize: 12, color: TEXT_MID, fontFamily: "sans-serif" }}>{p.location}</span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        padding: "3px 8px",
-                        borderRadius: 20,
-                        background: p.low ? `${RED}20` : `${GREEN}20`,
-                        color: p.low ? RED : GREEN,
-                        fontFamily: "sans-serif",
-                        display: "inline-block",
-                      }}
-                    >
-                      {p.low ? "Matala" : "OK"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </BrowserFrame>
+    <div style={{ height: "100%", position: "relative" }}>
+      {/* Dimmed dashboard behind */}
+      <div style={{ padding: "14px 14px 0", opacity: 0.35 }}>
+        <div style={{ fontSize: 22, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>Yleiskatsaus</div>
+        <div style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif", marginBottom: 12 }}>Varaston kokonaistilanne yhdellä silmäyksellä</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <StatCard label="Aktiiviset erät" value={18} sub="Tuotteita: 19" iconBg={PURPLE_LIGHT} icon="📚" />
+          <StatCard label="Kokonaismäärä" value="1 017" sub="Sijainteja: 10" iconBg={GREEN_LIGHT} icon="📦" />
+        </div>
       </div>
-    </AbsoluteFill>
-  );
-};
-
-// ─── Scene 3: New order notification (frames 300-420) ─────────────────────────
-const OrderScene: React.FC = () => {
-  const { fps } = useVideoConfig();
-  const frame = useCurrentFrame();
-
-  const browserIn = useSlideIn(0, fps, "up", 50);
-  const notifIn = useSlideIn(15, fps, "right", 120);
-
-  const statusProgress = spring({
-    frame: frame - 40,
-    fps,
-    config: { damping: 18, stiffness: 100 },
-  });
-  const statusOpacity = interpolate(statusProgress, [0, 1], [0, 1], { extrapolateRight: "clamp" });
-
-  return (
-    <AbsoluteFill
-      style={{
-        background: `radial-gradient(ellipse at 50% 30%, #1E3A5F 0%, ${BRAND_BG} 70%)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div style={{ ...browserIn }}>
-        <BrowserFrame>
-          <Sidebar active="Tilaukset" />
-          <div style={{ flex: 1, background: APP_BG, padding: 24, position: "relative" }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif", margin: "0 0 20px" }}>
-              Tilaukset
-            </h1>
-            {/* Order card */}
-            <div style={{ background: WHITE, borderRadius: 10, padding: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>Tilaus #1043</div>
-                  <div style={{ fontSize: 12, color: TEXT_LIGHT, fontFamily: "sans-serif" }}>Tänään 14:47 · Asiakkaalle: Rakennus Oy</div>
-                </div>
-                <div style={{ opacity: statusOpacity }}>
-                  <span style={{ background: `${GREEN}20`, color: GREEN, fontSize: 12, fontWeight: 700, padding: "5px 12px", borderRadius: 20, fontFamily: "sans-serif" }}>
-                    ✓ Käsitelty
-                  </span>
-                </div>
-              </div>
-              <div style={{ borderTop: "1px solid #F1F5F9", paddingTop: 12 }}>
-                {[
-                  { name: "Ruuvit M8 50mm", qty: 50, price: "12,50 €" },
-                  { name: "Mutteri M6", qty: 100, price: "8,00 €" },
-                  { name: "Pultit 10mm", qty: 30, price: "15,00 €" },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < 2 ? "1px solid #F8FAFC" : "none" }}>
-                    <span style={{ fontSize: 13, color: TEXT_MID, fontFamily: "sans-serif" }}>{item.name} × {item.qty} kpl</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: TEXT_DARK, fontFamily: "sans-serif" }}>{item.price}</span>
-                  </div>
-                ))}
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>Yhteensä: 35,50 €</span>
-                </div>
-              </div>
-            </div>
-            {/* Notification popup */}
+      {/* Overlay */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }} />
+      {/* Bottom sheet */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: CARD_BG,
+          borderRadius: "20px 20px 0 0",
+          padding: "14px 14px 12px",
+          transform: `translateY(${sheetY}px)`,
+        }}
+      >
+        <div style={{ width: 36, height: 4, background: "#E5E5EA", borderRadius: 2, margin: "0 auto 14px" }} />
+        <div style={{ fontSize: 10, fontWeight: 700, color: TEXT_LIGHT, fontFamily: "sans-serif", letterSpacing: 1, marginBottom: 10 }}>
+          UUSI TAPAHTUMA
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {actions.map((a) => (
             <div
+              key={a.label}
               style={{
-                ...notifIn,
-                position: "absolute",
-                top: 20,
-                right: 20,
-                background: WHITE,
-                borderRadius: 10,
-                padding: "12px 16px",
-                boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
-                borderLeft: `4px solid ${GREEN}`,
-                width: 260,
+                background: a.bg,
+                borderRadius: 12,
+                padding: "12px 10px",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                gridColumn: a.label === "Valmistus" ? "1 / -1" : undefined,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>🔔 Uusi tilaus saapui!</div>
-              <div style={{ fontSize: 12, color: TEXT_MID, fontFamily: "sans-serif", marginTop: 3 }}>Tilaus #1043 · Rakennus Oy</div>
+              <span style={{ fontSize: 16 }}>{a.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: a.color, fontFamily: "sans-serif" }}>{a.label}</span>
             </div>
-          </div>
-        </BrowserFrame>
+          ))}
+        </div>
       </div>
-    </AbsoluteFill>
+    </div>
   );
 };
 
-// ─── Scene 4: CTA (frames 420-540) ────────────────────────────────────────────
+// ─── Scene 3: Varaston arvo (300-420) ─────────────────────────────────────────
+const ValueScreen: React.FC = () => {
+  const { fps } = useVideoConfig();
+  const h1 = useSlide(5, fps, 30);
+  const c1 = useSlide(15, fps);
+  const c2 = useSlide(22, fps);
+  const c3 = useSlide(29, fps);
+
+  const kust = useCountUp(7872, 15, 70);
+  const myynti = useCountUp(9200, 22, 80);
+  const kate = useCountUp(1328, 29, 85);
+
+  return (
+    <div style={{ padding: "14px 14px 0" }}>
+      <div style={h1}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: TEXT_DARK, fontFamily: "sans-serif" }}>Varaston arvo</div>
+        <div style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif", marginBottom: 14 }}>
+          Seuraa varastosi kokonaisarvoa ja sen jakautumista
+        </div>
+      </div>
+      {[
+        { label: "Kustannusarvo", value: kust, sub: "Eriä: 18", iconBg: GREEN_LIGHT, icon: "€", valueColor: TEXT_DARK },
+        { label: "Myyntiarvo", value: myynti, sub: "Tuotteita: 15", iconBg: BLUE_LIGHT, icon: "📈", valueColor: TEXT_DARK },
+        { label: "Potentiaalinen kate", value: kate, sub: "Myyntiarvo − kustannusarvo", iconBg: GREEN_LIGHT, icon: "↗", valueColor: GREEN },
+      ].map((item, i) => {
+        const s = [c1, c2, c3][i];
+        return (
+          <div key={item.label} style={{ ...s, marginBottom: 10 }}>
+            <div style={{ background: CARD_BG, borderRadius: 14, padding: "14px", boxShadow: SHADOW, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 11, color: TEXT_MID, fontFamily: "sans-serif", marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 30, fontWeight: 800, color: item.valueColor, fontFamily: "sans-serif", lineHeight: 1 }}>
+                  {item.value.toLocaleString("fi")} €
+                </div>
+                <div style={{ fontSize: 10, color: TEXT_MID, fontFamily: "sans-serif", marginTop: 3 }}>{item.sub}</div>
+              </div>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: item.iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                {item.icon}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── CTA (420-540) ────────────────────────────────────────────────────────────
 const CTAScene: React.FC = () => {
   const { fps } = useVideoConfig();
   const frame = useCurrentFrame();
-
-  const logo = useSlideIn(5, fps);
-  const text = useSlideIn(20, fps);
-  const btn = useSlideIn(35, fps);
-
-  const glow = interpolate(Math.sin((frame / fps) * Math.PI * 2), [-1, 1], [0.5, 1]);
+  const logo = useSlide(5, fps, 50);
+  const tagline = useSlide(20, fps, 35);
+  const btn = useSlide(32, fps, 30);
+  const glow = interpolate(Math.sin((frame / fps) * Math.PI * 2), [-1, 1], [0.6, 1]);
 
   return (
     <AbsoluteFill
       style={{
-        background: `radial-gradient(ellipse at 50% 50%, #1E3A5F 0%, ${BRAND_BG} 65%)`,
+        background: "linear-gradient(145deg, #0F2A18 0%, #0A1628 60%)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 28,
+        gap: 24,
       }}
     >
       <div style={{ ...logo, display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 14, background: BRAND_BLUE, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, boxShadow: `0 0 30px ${BRAND_BLUE}66` }}>📦</div>
-        <span style={{ fontSize: 56, fontWeight: 800, color: WHITE, fontFamily: "sans-serif", letterSpacing: -1 }}>
-          Varasto<span style={{ color: "#60A5FA" }}>kamu</span>
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: GREEN, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, boxShadow: `0 0 40px ${GREEN}88` }}>
+          🏭
+        </div>
+        <span style={{ fontSize: 52, fontWeight: 800, color: "#FFFFFF", fontFamily: "sans-serif", letterSpacing: -1 }}>
+          Varasto<span style={{ color: "#4ADE80" }}>Kamu</span>
         </span>
       </div>
-      <div style={{ ...text, textAlign: "center" }}>
-        <div style={{ fontSize: 28, color: WHITE, fontFamily: "sans-serif", fontWeight: 600 }}>Aloita ilmaiseksi tänään</div>
-        <div style={{ fontSize: 18, color: TEXT_LIGHT, fontFamily: "sans-serif", marginTop: 6 }}>Ei luottokorttia. Ei sitoumuksia.</div>
+      <div style={{ ...tagline, textAlign: "center" }}>
+        <div style={{ fontSize: 26, color: "#E2E8F0", fontFamily: "sans-serif", fontWeight: 600 }}>Älykkäin tapa hallita varastoa</div>
+        <div style={{ fontSize: 17, color: "#64748B", fontFamily: "sans-serif", marginTop: 6 }}>Kokeile ilmaiseksi — ei sitoumuksia</div>
       </div>
-      <div style={{ ...btn, background: BRAND_BLUE, color: WHITE, padding: "16px 48px", borderRadius: 12, fontSize: 24, fontWeight: 700, fontFamily: "sans-serif", boxShadow: `0 0 ${36 * glow}px ${BRAND_BLUE}` }}>
+      <div style={{
+        ...btn,
+        background: GREEN,
+        color: "#FFFFFF",
+        padding: "16px 52px",
+        borderRadius: 16,
+        fontSize: 24,
+        fontWeight: 700,
+        fontFamily: "sans-serif",
+        boxShadow: `0 0 ${40 * glow}px ${GREEN}`,
+        letterSpacing: 0.3,
+      }}>
         varastokamu.fi
       </div>
     </AbsoluteFill>
   );
 };
 
+// ─── Branded background ───────────────────────────────────────────────────────
+const BrandedBG: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <AbsoluteFill
+    style={{
+      background: "linear-gradient(145deg, #0F2A18 0%, #0A1628 60%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    {children}
+  </AbsoluteFill>
+);
+
+// ─── Phone scene helper ───────────────────────────────────────────────────────
+const PhoneScene: React.FC<{
+  startFrame: number;
+  children: React.ReactNode;
+}> = ({ startFrame, children }) => {
+  const { fps } = useVideoConfig();
+  const p = useSpr(startFrame, fps, 14);
+  const y = interpolate(p, [0, 1], [80, 0]);
+  const scale = interpolate(p, [0, 1], [0.92, 1]);
+  const opacity = interpolate(p, [0, 0.3], [0, 1], { extrapolateRight: "clamp" });
+  return (
+    <BrandedBG>
+      <div style={{ transform: `translateY(${y}px) scale(${scale})`, opacity }}>
+        <Phone>{children}</Phone>
+      </div>
+    </BrandedBG>
+  );
+};
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export const VarastokamuAppDemo: React.FC = () => (
-  <AbsoluteFill style={{ background: BRAND_BG }}>
+  <AbsoluteFill>
     <Sequence from={0} durationInFrames={150}>
-      <Dashboard />
+      <PhoneScene startFrame={5}><DashboardScreen /></PhoneScene>
     </Sequence>
     <Sequence from={150} durationInFrames={150}>
-      <InventoryScene />
+      <PhoneScene startFrame={0}><ActionScreen /></PhoneScene>
     </Sequence>
     <Sequence from={300} durationInFrames={120}>
-      <OrderScene />
+      <PhoneScene startFrame={0}><ValueScreen /></PhoneScene>
     </Sequence>
     <Sequence from={420} durationInFrames={120}>
       <CTAScene />
