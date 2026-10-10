@@ -1,11 +1,10 @@
 {
   "mcpServers": {
     "home-assistant": {
-      "command": "uvx",
-      "args": ["hass-mcp"],
-      "env": {
-        "HA_URL": "${HA_URL}",
-        "HA_TOKEN": "${HA_TOKEN}"
+      "type": "sse",
+      "url": "${HA_URL}/mcp_server/sse",
+      "headers": {
+        "Authorization": "Bearer ${HA_TOKEN}"
       }
     }
   }
